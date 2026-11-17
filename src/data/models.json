@@ -211,9 +211,9 @@
       "id": "google/gemini-3.8-flash",
       "name": "Gemini 3.8 Flash",
       "provider": "Google",
-      "input": 0.75,
-      "cachedInput": 0.075,
-      "output": 3.75,
+      "input": 0.825,
+      "cachedInput": 0.0825,
+      "output": 4.125,
       "context": 1048576,
       "note": "Introductory rate through Dec 31, 2026. Then $1.50 / $0.15 / $7.50."
     },
