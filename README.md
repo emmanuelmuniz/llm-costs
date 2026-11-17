@@ -3,7 +3,7 @@
 Compare what a prompt costs across LLM APIs: per call, per day, per month.
 Paste the text or type token counts, pick models, share the link.
 
-**Live:** https://llm-costs.vercel.app
+**Live:** https://llm-costs-app.vercel.app
 
 - Runs entirely in your browser. No API keys, no accounts, no analytics.
 - Prices refresh on load from [OpenRouter's public models API](https://openrouter.ai/api/v1/models), with a bundled snapshot as fallback.
