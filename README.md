@@ -12,7 +12,7 @@ Paste the text or type token counts, pick models, share the link.
 
 ## How prices work
 
-`src/data/models.json` is a curated snapshot of the models most people compare, with each provider's **direct API list price** checked by hand against the official pricing pages linked in the file. A weekly GitHub Action refreshes it from OpenRouter so it doesn't rot.
+`src/data/models.json` is a curated snapshot of the models most people compare, with each provider's **direct API list price** checked by hand against the official pricing pages linked in the file. A weekly GitHub Action refreshes it from OpenRouter so it doesn't rot. Rows marked `"pin": true` (DeepSeek, Llama) are left alone, because OpenRouter serves those through third-party hosts at different rates.
 
 At runtime the app fetches OpenRouter's catalog and overlays live prices on the snapshot. When a live price drifts more than 15% from the snapshot, the row shows a **Δ** marker. That usually means one of two things:
 

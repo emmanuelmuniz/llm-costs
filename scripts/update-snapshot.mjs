@@ -1,5 +1,7 @@
 // Refreshes src/data/models.json with current prices from OpenRouter's public models API.
 // Only models already in the snapshot are touched; names, notes and providers are kept.
+// Models with "pin": true are skipped: OpenRouter serves them through third-party hosts,
+// so its rate is not the provider's list price. Update those by hand.
 // Usage: node scripts/update-snapshot.mjs
 import { readFile, writeFile } from "node:fs/promises";
 
@@ -15,6 +17,7 @@ const live = new Map(data.map((m) => [m.id, m]));
 const perM = (s) => Math.round(Number(s) * 1e6 * 1e6) / 1e6;
 let changed = 0;
 for (const m of snapshot.models) {
+  if (m.pin) continue;
   const l = live.get(m.id);
   if (!l?.pricing?.prompt || !l.pricing.completion) {
     console.warn(`no live price for ${m.id}`);

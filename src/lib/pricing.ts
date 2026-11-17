@@ -11,6 +11,8 @@ export type Model = {
   output: number;
   context?: number;
   note?: string;
+  /** Skip live/snapshot refresh for this row (third-party-hosted on OpenRouter). */
+  pin?: boolean;
   source: "snapshot" | "live" | "custom";
   /** Snapshot prices kept around when live data replaced them, to flag drift. */
   snapshot?: { input: number; output: number };
