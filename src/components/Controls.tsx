@@ -33,45 +33,39 @@ export function Controls({ inputs, onChange }: Props) {
   const num = (v: string) => Math.max(0, Math.floor(Number(v) || 0));
 
   const activePreset = PRESETS.find((p) => p.inputTokens === inputs.inputTokens && p.outputTokens === inputs.outputTokens)?.label;
+  const cachePct = Math.round(inputs.cachedShare * 100);
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <div className="flex items-center justify-between">
-          <h2 className="label">Prompt</h2>
-          <div role="tablist" aria-label="How to describe the prompt" className="flex gap-1 text-[0.8125rem]">
-            {(["tokens", "text"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                role="tab"
-                type="button"
-                aria-selected={mode === m}
-                onClick={() => setMode(m)}
-                className={`rounded-full px-3 py-1 transition-colors ${mode === m ? "bg-fg text-bg" : "text-muted hover:text-fg"}`}
-              >
-                {m === "tokens" ? "Tokens" : "Paste text"}
-              </button>
-            ))}
-          </div>
+    <div className="card flex flex-col gap-6 p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[0.9375rem] font-semibold">Prompt</h2>
+        <div role="tablist" aria-label="How to describe the prompt" className="seg">
+          {(["tokens", "text"] as Mode[]).map((m) => (
+            <button key={m} role="tab" type="button" aria-selected={mode === m} onClick={() => setMode(m)}>
+              {m === "tokens" ? "Tokens" : "Paste text"}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {mode === "text" ? (
-          <div className="mt-4">
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste a system prompt, a document, a conversation…"
-              rows={7}
-              className="field resize-y rounded-none !text-[0.9375rem] leading-relaxed"
-              style={{ fontFamily: "var(--font-sans)" }}
-            />
-            <p className="label mt-2">
-              {counting ? "Counting…" : text.trim() ? `≈ ${fmtInt(inputs.inputTokens)} input tokens` : "Counted locally with the o200k tokenizer"}
-              {text.trim() && !counting ? <span className="text-faint"> · o200k estimate; other providers differ slightly</span> : null}
-            </p>
-          </div>
-        ) : (
-          <div className="mt-4 flex flex-wrap gap-2">
+      {mode === "text" ? (
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste a system prompt, a document, a conversation…"
+            rows={7}
+            className="field field-sans resize-y leading-relaxed"
+          />
+          <p className="label">
+            {counting ? "Counting…" : text.trim() ? `≈ ${fmtInt(inputs.inputTokens)} input tokens` : "Counted locally with the o200k tokenizer"}
+            {text.trim() && !counting ? <span> · o200k estimate; other providers differ slightly</span> : null}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <span className="label">Presets</span>
+          <div className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
               <button
                 key={p.label}
@@ -85,66 +79,70 @@ export function Controls({ inputs, onChange }: Props) {
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-6">
-        <label className="block">
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1.5">
           <span className="label">Input tokens</span>
           <input
             type="number"
             min={0}
             step={100}
             inputMode="numeric"
-            className="field mt-1"
+            className="field"
             value={inputs.inputTokens}
             disabled={mode === "text"}
             onChange={(e) => set({ inputTokens: num(e.target.value) })}
           />
         </label>
-        <label className="block">
+        <label className="flex flex-col gap-1.5">
           <span className="label">Output tokens</span>
           <input
             type="number"
             min={0}
             step={50}
             inputMode="numeric"
-            className="field mt-1"
+            className="field"
             value={inputs.outputTokens}
             onChange={(e) => set({ outputTokens: num(e.target.value) })}
           />
         </label>
-        <label className="block">
+        <label className="col-span-2 flex flex-col gap-1.5">
           <span className="label">Calls per day</span>
           <input
             type="number"
             min={0}
             step={100}
             inputMode="numeric"
-            className="field mt-1"
+            className="field"
             value={inputs.callsPerDay}
             onChange={(e) => set({ callsPerDay: num(e.target.value) })}
           />
         </label>
-        <div className="block">
-          <div className="flex items-baseline justify-between">
-            <span className="label">Cached input</span>
-            <span className="num text-sm text-muted">{Math.round(inputs.cachedShare * 100)}%</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            className="range mt-4"
-            aria-label="Share of input tokens served from the prompt cache"
-            value={Math.round(inputs.cachedShare * 100)}
-            onChange={(e) => set({ cachedShare: Number(e.target.value) / 100 })}
-          />
-          <p className="mt-2 text-[0.75rem] leading-snug text-faint">
-            Share of the input that hits the provider's prompt cache. System prompts and long documents repeated across calls usually do.
-          </p>
+      </div>
+
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-baseline justify-between">
+          <label htmlFor="cache" className="label">
+            Cached input
+          </label>
+          <span className="num text-[0.8125rem] text-muted">{cachePct}%</span>
         </div>
+        <input
+          id="cache"
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          className="range"
+          aria-label="Share of input tokens served from the prompt cache"
+          value={cachePct}
+          onChange={(e) => set({ cachedShare: Number(e.target.value) / 100 })}
+        />
+        <p className="text-[0.75rem] leading-snug text-faint">
+          Share of the input the provider serves from its prompt cache. Repeated system prompts and documents usually do.
+        </p>
       </div>
     </div>
   );

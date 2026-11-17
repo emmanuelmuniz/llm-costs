@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Controls } from "./components/Controls";
 import { Header, REPO_URL } from "./components/Header";
-import { ModelPicker } from "./components/ModelPicker";
+import { ModelsBar } from "./components/ModelsBar";
 import { Results } from "./components/Results";
 import { computeRows, type Inputs } from "./lib/cost";
 import { loadCatalog, snapshotCatalog, SNAPSHOT_DATE, SOURCES, type Catalog, type Model } from "./lib/pricing";
@@ -58,8 +58,6 @@ export function App() {
     }
   }, [custom]);
 
-  const selectedSet = useMemo(() => new Set(selected), [selected]);
-
   const rows = useMemo(() => {
     const customById = new Map(custom.map((m) => [m.id, m]));
     const models = selected
@@ -78,74 +76,76 @@ export function App() {
     setSelected((s) => s.filter((x) => x !== id));
   };
 
-  return (
-    <div className="mx-auto flex min-h-dvh max-w-[80rem] flex-col px-5 pt-5 pb-16 sm:px-8">
-      <Header catalog={catalog} />
+  const live = catalog.status === "live";
 
-      <section className="pt-14 pb-12 md:pt-20 md:pb-16">
-        <h1 className="display max-w-[22ch] text-[clamp(2.25rem,6vw,4.5rem)] font-semibold leading-[0.98] tracking-[-0.03em]">
-          What does that prompt <span className="text-accent">cost</span>?
-        </h1>
-        <p className="mt-6 max-w-[48ch] text-[1.0625rem] leading-relaxed text-muted md:text-[1.125rem]">
-          Paste the text or type token counts, pick the models you're weighing, and see the bill per call, per day and per month.
-          Everything runs in your browser.
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-[75rem] flex-col px-4 pb-16 sm:px-8">
+      <Header />
+
+      <section className="flex flex-col gap-3 pt-8 pb-7 md:pt-11 md:pb-9">
+        <h1 className="display text-[clamp(1.875rem,4.5vw,2.5rem)] font-semibold leading-[1.05]">What does that prompt cost?</h1>
+        <p className="max-w-[60ch] text-[0.9375rem] text-muted md:text-base">
+          Type token counts or paste the text, pick the models you're weighing, and see the bill per call, per day and per month. Runs
+          in your browser, no keys.
         </p>
       </section>
 
-      <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <aside className="lg:col-span-4">
-          <div className="lg:sticky lg:top-6">
-            <Controls inputs={inputs} onChange={setInputs} />
-          </div>
+      <div className="flex flex-wrap items-start gap-8">
+        <aside className="min-w-[17.5rem] flex-[0_1_22rem] lg:sticky lg:top-6">
+          <Controls inputs={inputs} onChange={setInputs} />
         </aside>
-        <main className="lg:col-span-8">
-          <Results rows={rows} inputs={inputs} onRemove={toggle} />
+        <main className="flex min-w-0 flex-[1_1_35rem] flex-col gap-7">
+          <ModelsBar
+            catalog={catalog}
+            custom={custom}
+            selected={selected}
+            onToggle={toggle}
+            onAddCustom={addCustom}
+            onRemoveCustom={removeCustom}
+          />
+          <Results rows={rows} inputs={inputs} />
         </main>
       </div>
 
-      <div className="mt-20 border-t border-rule pt-12 md:mt-28">
-        <ModelPicker
-          catalog={catalog}
-          custom={custom}
-          selected={selectedSet}
-          onToggle={toggle}
-          onAddCustom={addCustom}
-          onRemoveCustom={removeCustom}
-        />
-      </div>
-
-      <footer className="mt-20 grid gap-6 border-t border-rule pt-8 text-[0.8125rem] leading-relaxed text-muted md:grid-cols-12 md:mt-28">
-        <p className="md:col-span-7">
-          Prices are USD per million tokens at each provider's standard tier, excluding batch, flex and priority rates, long-context
-          surcharges and cache-storage fees. Live prices come from{" "}
-          <a className="link" href="https://openrouter.ai/models" target="_blank" rel="noreferrer">
-            OpenRouter
-          </a>
-          , which mirrors most providers' list prices but hosts some models through third parties; the Δ marker flags rows that drift
-          from the snapshot checked on {SNAPSHOT_DATE}. Verify against the official pages before budgeting:{" "}
+      <footer className="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-rule pt-6 text-[0.8125rem] leading-relaxed text-muted">
+        <p className="max-w-[70ch] flex-[1_1_30rem]">
+          USD per million tokens at each provider's standard tier, excluding batch, flex and priority rates, long-context surcharges and
+          cache-storage fees.{" "}
+          {live ? (
+            <>
+              Live rates come from{" "}
+              <a className="link" href="https://openrouter.ai/models" target="_blank" rel="noreferrer">
+                OpenRouter
+              </a>{" "}
+              and refresh hourly in your browser; the bundled snapshot was checked on {SNAPSHOT_DATE} and rows marked Δ differ from it.
+            </>
+          ) : (
+            <>Prices are the bundled snapshot checked on {SNAPSHOT_DATE}; live rates from OpenRouter were not reachable.</>
+          )}{" "}
+          Verify against{" "}
           {SOURCES.filter((s) => !s.label.includes("OpenRouter")).map((s, i, arr) => (
             <span key={s.url}>
               <a className="link" href={s.url} target="_blank" rel="noreferrer">
                 {s.label}
               </a>
-              {i < arr.length - 1 ? ", " : "."}
+              {i < arr.length - 1 ? ", " : " before budgeting."}
             </span>
           ))}
         </p>
-        <p className="md:col-span-4 md:col-start-9">
-          Open source under MIT.{" "}
+        <p className="flex-[0_1_20rem]">
+          Open source under MIT ·{" "}
           <a className="link" href={REPO_URL} target="_blank" rel="noreferrer">
-            Code on GitHub
-          </a>
-          . Spotted a wrong price?{" "}
+            GitHub
+          </a>{" "}
+          ·{" "}
           <a className="link" href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">
-            Open an issue
+            Report a wrong price
           </a>
-          . Made by{" "}
+          <br />
+          Made by{" "}
           <a className="link" href="https://github.com/emmanuelmuniz" target="_blank" rel="noreferrer">
             Emmanuel Muñiz Adaro
           </a>
-          .
         </p>
       </footer>
     </div>

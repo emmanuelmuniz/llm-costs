@@ -2,9 +2,11 @@ import { useState } from "react";
 import { fmtInt, fmtRate, fmtUSD, type CostRow, type Inputs } from "../lib/cost";
 import { hasDrift } from "../lib/pricing";
 
-type Props = { rows: CostRow[]; inputs: Inputs; onRemove: (id: string) => void };
+type Props = { rows: CostRow[]; inputs: Inputs };
 
-export function Results({ rows, inputs, onRemove }: Props) {
+const GRID = "md:grid-cols-[minmax(0,2.2fr)_repeat(3,minmax(0,1fr))]";
+
+export function Results({ rows, inputs }: Props) {
   const [copied, setCopied] = useState(false);
   const max = rows.reduce((m, r) => Math.max(m, r.perCall), 0);
 
@@ -16,16 +18,15 @@ export function Results({ rows, inputs, onRemove }: Props) {
   };
 
   return (
-    <section aria-labelledby="results-title">
+    <section aria-labelledby="results-title" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 id="results-title" className="label">
+        <div className="flex flex-col gap-1">
+          <h2 id="results-title" className="text-[0.9375rem] font-semibold">
             Cost
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="text-[0.8125rem] text-muted">
             {fmtInt(inputs.inputTokens)} in · {fmtInt(inputs.outputTokens)} out · {fmtInt(inputs.callsPerDay)} calls/day
-            {inputs.cachedShare > 0 ? ` · ${Math.round(inputs.cachedShare * 100)}% cached` : ""}
-            <span className="text-faint"> · rates shown as in · cached · out, $/1M</span>
+            {inputs.cachedShare > 0 ? ` · ${Math.round(inputs.cachedShare * 100)}% cached` : ""} · cheapest first
           </p>
         </div>
         <button type="button" className="btn" onClick={copy}>
@@ -33,70 +34,72 @@ export function Results({ rows, inputs, onRemove }: Props) {
         </button>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="mt-10 text-muted">Pick at least one model below.</p>
-      ) : (
-        <ol className="mt-6 border-t border-rule">
-          {rows.map((r, i) => (
-            <li
-              key={r.model.id}
-              className="rise grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-2 border-b border-rule py-4 md:grid-cols-[minmax(0,2.1fr)_repeat(3,minmax(0,1fr))_auto] md:items-center"
-              style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
-            >
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="display truncate text-[1.0625rem] font-medium">{r.model.name}</span>
-                  <span className="label truncate">{r.model.provider}</span>
-                  {hasDrift(r.model) ? (
-                    <span
-                      className="label text-accent"
-                      title={`Live price differs from the provider's list price in our snapshot (${fmtRate(r.model.snapshot!.input)} / ${fmtRate(r.model.snapshot!.output)}).`}
-                    >
-                      Δ
-                    </span>
-                  ) : null}
-                </div>
-                <p
-                  className="num mt-1 whitespace-nowrap text-[0.8125rem] text-muted"
-                  title="Price per 1M tokens: input · cached input · output"
-                >
-                  {fmtRate(r.model.input)} · {r.model.cachedInput !== undefined ? fmtRate(r.model.cachedInput) : "–"} · {fmtRate(r.model.output)}
-                  <span className="text-faint"> /1M</span>
-                </p>
-                <div className="mt-3 h-1 w-full rounded bg-bg-2">
-                  <div className="bar" style={{ width: `${max > 0 ? Math.max(1, (r.perCall / max) * 100) : 0}%` }} />
-                </div>
-                {r.model.note ? <p className="mt-2 text-[0.75rem] leading-snug text-faint">{r.model.note}</p> : null}
-              </div>
+      <div className="card overflow-hidden">
+        <div className={`th hidden gap-4 border-b border-rule px-5 py-2.5 md:grid ${GRID}`}>
+          <span>Model · $/1M in · cached · out</span>
+          <span className="text-right">Per call</span>
+          <span className="text-right">Per day</span>
+          <span className="text-right">Per month</span>
+        </div>
 
-              <button
-                type="button"
-                onClick={() => onRemove(r.model.id)}
-                className="label link row-start-1 text-faint hover:text-fg md:col-start-5"
-                aria-label={`Remove ${r.model.name}`}
+        {rows.length === 0 ? (
+          <p className="px-5 py-10 text-center text-muted">Add at least one model above.</p>
+        ) : (
+          <ol>
+            {rows.map((r, i) => (
+              <li
+                key={r.model.id}
+                className={`rise grid grid-cols-1 gap-x-4 gap-y-2 border-b border-rule px-4 py-3.5 last:border-b-0 md:items-center md:px-5 ${GRID}`}
+                style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
               >
-                Remove
-              </button>
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between gap-2 md:justify-start">
+                    <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                      <span className="font-medium">{r.model.name}</span>
+                      <span className="shrink-0 text-[0.75rem] text-faint">{r.model.provider}</span>
+                      {hasDrift(r.model) ? (
+                        <span
+                          className="shrink-0 text-[0.6875rem] font-medium text-accent"
+                          title={`Live price differs from the provider's list price in our snapshot (${fmtRate(r.model.snapshot!.input)} / ${fmtRate(r.model.snapshot!.output)}).`}
+                        >
+                          Δ live
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="num shrink-0 text-[0.9375rem] font-medium md:hidden">
+                      {fmtUSD(r.perMonth)}
+                      <span className="text-[0.6875rem] font-normal text-faint">/mo</span>
+                    </span>
+                  </div>
+                  <div className="num flex justify-between text-[0.75rem] text-muted md:block">
+                    <span title="Price per 1M tokens: input · cached input · output">
+                      {fmtRate(r.model.input)} · {r.model.cachedInput !== undefined ? fmtRate(r.model.cachedInput) : "–"} ·{" "}
+                      {fmtRate(r.model.output)}
+                    </span>
+                    <span className="md:hidden">{fmtUSD(r.perCall)}/call</span>
+                  </div>
+                  <div className="h-[3px] w-full rounded-sm bg-track">
+                    <div className="bar" style={{ width: `${max > 0 ? Math.max(1, (r.perCall / max) * 100) : 0}%` }} />
+                  </div>
+                  {r.model.note ? <p className="text-[0.75rem] leading-snug text-faint">{r.model.note}</p> : null}
+                </div>
 
-              <Stat label="per call" value={fmtUSD(r.perCall)} className="col-span-2 md:col-span-1" />
-              <Stat label="per day" value={fmtUSD(r.perDay)} className="hidden md:block" />
-              <Stat label="per month" value={fmtUSD(r.perMonth)} strong className="hidden md:block" />
-              <p className="num col-span-2 -mt-1 text-[0.8125rem] text-muted md:hidden">
-                {fmtUSD(r.perDay)} / day · <span className="text-fg">{fmtUSD(r.perMonth)} / month</span>
-              </p>
-            </li>
-          ))}
-        </ol>
-      )}
+                <Cell value={fmtUSD(r.perCall)} />
+                <Cell value={fmtUSD(r.perDay)} />
+                <Cell value={fmtUSD(r.perMonth)} strong />
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </section>
   );
 }
 
-function Stat({ label, value, strong, className = "" }: { label: string; value: string; strong?: boolean; className?: string }) {
+function Cell({ value, strong }: { value: string; strong?: boolean }) {
   return (
-    <div className={className}>
-      <span className="label block">{label}</span>
-      <span className={`num block text-[1.125rem] md:text-[1.25rem] ${strong ? "text-fg" : "text-muted"}`}>{value}</span>
-    </div>
+    <span className={`num hidden text-right md:block ${strong ? "text-[0.9375rem] font-medium" : "text-[0.875rem] text-muted"}`}>
+      {value}
+    </span>
   );
 }
