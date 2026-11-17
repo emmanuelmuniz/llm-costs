@@ -150,7 +150,9 @@ function Popover({ catalog, custom, selected, onToggle, onAddCustom, onRemoveCus
                     {m.context ? <span className="shrink-0 text-[0.75rem] text-faint">{fmtContext(m.context)} ctx</span> : null}
                   </span>
                   <span className="num shrink-0 text-[0.75rem] text-muted">
-                    {fmtRate(m.input)} / {fmtRate(m.output)}
+                    <span className="text-faint">input </span>
+                    {fmtRate(m.input)} · <span className="text-faint">output </span>
+                    {fmtRate(m.output)}
                   </span>
                   {m.source === "custom" ? (
                     <button
@@ -183,7 +185,7 @@ function Popover({ catalog, custom, selected, onToggle, onAddCustom, onRemoveCus
           />
         ) : (
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[0.75rem] text-faint">$/1M in / out · any OpenRouter model</span>
+            <span className="text-[0.75rem] text-faint">Prices per 1M tokens · any OpenRouter model</span>
             <button type="button" className="text-[0.8125rem] font-medium text-accent" onClick={() => setCustomOpen(true)}>
               Custom price…
             </button>

@@ -58,9 +58,17 @@ export function Controls({ inputs, onChange }: Props) {
             className="field field-sans resize-y leading-relaxed"
           />
           <p className="label">
-            {counting ? "Counting…" : text.trim() ? `≈ ${fmtInt(inputs.inputTokens)} input tokens` : "Counted locally with the o200k tokenizer"}
-            {text.trim() && !counting ? <span> · o200k estimate; other providers differ slightly</span> : null}
+            {counting
+              ? "Counting…"
+              : text.trim()
+                ? `≈ ${fmtInt(inputs.inputTokens)} input tokens (o200k estimate)`
+                : "Counted locally with the o200k tokenizer"}
           </p>
+          {text.trim() && !counting ? (
+            <p className="text-[0.75rem] leading-snug text-faint">
+              The reply still counts: each call also bills {fmtInt(inputs.outputTokens)} output tokens, set below. That is usually most of the cost.
+            </p>
+          ) : null}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">

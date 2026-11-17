@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controls } from "./components/Controls";
 import { Header, REPO_URL } from "./components/Header";
 import { ModelsBar } from "./components/ModelsBar";
+import { Priciest } from "./components/Priciest";
 import { Results } from "./components/Results";
 import { computeRows, type Inputs } from "./lib/cost";
 import { loadCatalog, snapshotCatalog, SNAPSHOT_DATE, SOURCES, type Catalog, type Model } from "./lib/pricing";
@@ -58,6 +59,8 @@ export function App() {
     }
   }, [custom]);
 
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
   const rows = useMemo(() => {
     const customById = new Map(custom.map((m) => [m.id, m]));
     const models = selected
@@ -106,6 +109,8 @@ export function App() {
           <Results rows={rows} inputs={inputs} />
         </main>
       </div>
+
+      <Priciest catalog={catalog} inputs={inputs} selected={selectedSet} onToggle={toggle} />
 
       <footer className="mt-14 flex flex-wrap gap-x-12 gap-y-6 border-t border-rule pt-6 text-[0.8125rem] leading-relaxed text-muted">
         <p className="max-w-[70ch] flex-[1_1_30rem]">

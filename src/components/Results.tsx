@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { fmtInt, fmtRate, fmtUSD, type CostRow, type Inputs } from "../lib/cost";
+import { fmtInt, fmtPct, fmtRate, fmtUSD, outputShare, type CostRow, type Inputs } from "../lib/cost";
 import { hasDrift } from "../lib/pricing";
 
 type Props = { rows: CostRow[]; inputs: Inputs };
 
-const GRID = "md:grid-cols-[minmax(0,2.2fr)_repeat(3,minmax(0,1fr))]";
+const GRID = "md:grid-cols-[minmax(0,2.6fr)_repeat(3,minmax(5rem,1fr))]";
 
 export function Results({ rows, inputs }: Props) {
   const [copied, setCopied] = useState(false);
@@ -25,7 +25,7 @@ export function Results({ rows, inputs }: Props) {
             Cost
           </h2>
           <p className="text-[0.8125rem] text-muted">
-            {fmtInt(inputs.inputTokens)} in · {fmtInt(inputs.outputTokens)} out · {fmtInt(inputs.callsPerDay)} calls/day
+            {fmtInt(inputs.inputTokens)} input · {fmtInt(inputs.outputTokens)} output · {fmtInt(inputs.callsPerDay)} calls/day
             {inputs.cachedShare > 0 ? ` · ${Math.round(inputs.cachedShare * 100)}% cached` : ""} · cheapest first
           </p>
         </div>
@@ -36,7 +36,7 @@ export function Results({ rows, inputs }: Props) {
 
       <div className="card overflow-hidden">
         <div className={`th hidden gap-4 border-b border-rule px-5 py-2.5 md:grid ${GRID}`}>
-          <span>Model · $/1M in · cached · out</span>
+          <span>Model · price per 1M tokens</span>
           <span className="text-right">Per call</span>
           <span className="text-right">Per day</span>
           <span className="text-right">Per month</span>
@@ -71,12 +71,14 @@ export function Results({ rows, inputs }: Props) {
                       <span className="text-[0.6875rem] font-normal text-faint">/mo</span>
                     </span>
                   </div>
-                  <div className="num flex justify-between text-[0.75rem] text-muted md:block">
-                    <span title="Price per 1M tokens: input · cached input · output">
-                      {fmtRate(r.model.input)} · {r.model.cachedInput !== undefined ? fmtRate(r.model.cachedInput) : "–"} ·{" "}
-                      {fmtRate(r.model.output)}
+                  <div className="num flex flex-wrap justify-between gap-x-3 text-[0.75rem] text-muted md:block">
+                    <span>
+                      <Rate label="input" value={r.model.input} /> · <Rate label="cached" value={r.model.cachedInput} /> ·{" "}
+                      <Rate label="output" value={r.model.output} /> <span className="text-faint md:hidden">· per 1M tokens</span>
                     </span>
-                    <span className="md:hidden">{fmtUSD(r.perCall)}/call</span>
+                    <span className="md:hidden">
+                      {fmtUSD(r.perCall)}/call · <Split r={r} inputs={inputs} />
+                    </span>
                   </div>
                   <div className="h-[3px] w-full rounded-sm bg-track">
                     <div className="bar" style={{ width: `${max > 0 ? Math.max(1, (r.perCall / max) * 100) : 0}%` }} />
@@ -84,7 +86,12 @@ export function Results({ rows, inputs }: Props) {
                   {r.model.note ? <p className="text-[0.75rem] leading-snug text-faint">{r.model.note}</p> : null}
                 </div>
 
-                <Cell value={fmtUSD(r.perCall)} />
+                <span className="num hidden flex-col items-end text-right md:flex">
+                  <span className="text-[0.875rem] text-muted">{fmtUSD(r.perCall)}</span>
+                  <span className="text-[0.6875rem] text-faint">
+                    <Split r={r} inputs={inputs} />
+                  </span>
+                </span>
                 <Cell value={fmtUSD(r.perDay)} />
                 <Cell value={fmtUSD(r.perMonth)} strong />
               </li>
@@ -93,6 +100,25 @@ export function Results({ rows, inputs }: Props) {
         )}
       </div>
     </section>
+  );
+}
+
+function Rate({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <span>
+      <span className="text-faint">{label} </span>
+      {value === undefined ? "–" : fmtRate(value)}
+    </span>
+  );
+}
+
+/** "input 0% · output 100%": which side of the call the money goes to. */
+function Split({ r, inputs }: { r: CostRow; inputs: Inputs }) {
+  const out = outputShare(r.model, inputs);
+  return (
+    <span title="Share of each call's cost that comes from input tokens vs the model's reply">
+      <span className="inline-block">input {fmtPct(1 - out)}</span> <span className="inline-block">· output {fmtPct(out)}</span>
+    </span>
   );
 }
 

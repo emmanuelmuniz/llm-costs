@@ -39,6 +39,28 @@ export function costPerCall(m: Model, i: Inputs): number {
   return (fresh + cached + out) / 1e6;
 }
 
+/** How much of one call's cost comes from input (fresh + cached) vs output, in USD. */
+export function costSplit(m: Model, i: Inputs): { input: number; output: number } {
+  const cachedPrice = m.cachedInput ?? m.input;
+  const fresh = i.inputTokens * (1 - i.cachedShare) * m.input;
+  const cached = i.inputTokens * i.cachedShare * cachedPrice;
+  return { input: (fresh + cached) / 1e6, output: (i.outputTokens * m.output) / 1e6 };
+}
+
+/** Share of a call's cost that is output, 0..1 (0 when the call is free). */
+export function outputShare(m: Model, i: Inputs): number {
+  const { input, output } = costSplit(m, i);
+  const total = input + output;
+  return total > 0 ? output / total : 0;
+}
+
+export function fmtPct(share: number): string {
+  const p = share * 100;
+  if (p > 0 && p < 1) return "<1%";
+  if (p > 99 && p < 100) return ">99%";
+  return `${Math.round(p)}%`;
+}
+
 export function computeRows(models: Model[], i: Inputs): CostRow[] {
   return models
     .map((model) => {
@@ -54,8 +76,7 @@ export function fmtUSD(n: number): string {
   if (n === 0) return "$0";
   const abs = Math.abs(n);
   let digits: number;
-  if (abs >= 1000) digits = 0;
-  else if (abs >= 100) digits = 1;
+  if (abs >= 100) digits = 0;
   else if (abs >= 1) digits = 2;
   else if (abs >= 0.01) digits = 4;
   else digits = 6;
